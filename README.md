@@ -77,7 +77,7 @@ This project leverages a **Convolutional Autoencoder (CAE)** to learn noise dist
 
 ---
 
-## 🌟 Contributions
+## Contributions
 - Physics‑motivated augmentation (not arbitrary).  
 - Amplitude + Phase decomposition instead of raw complex matrices.  
 - Compact latent representation that implicitly captures multipath.  
@@ -85,7 +85,7 @@ This project leverages a **Convolutional Autoencoder (CAE)** to learn noise dist
 
 ---
 
-## 🚀 Roadmap (Next Steps)
+## Roadmap (Next Steps)
 - Patch extraction from 15 GB combined dataset → 50,000+ samples.  
 - Evaluate **SNR gain**, **variance reduction**, and **energy preservation**.  
 - Architecture refinements: deeper encoder, skip connections, attention modules.  
@@ -94,7 +94,7 @@ This project leverages a **Convolutional Autoencoder (CAE)** to learn noise dist
 
 ---
 
-## ✅ Status
+## Status
 - ✔️ Preprocessing pipeline complete  
 - ✔️ Feature extraction implemented  
 - ✔️ Augmentation applied (51 → 594 samples)  
@@ -104,7 +104,7 @@ This project leverages a **Convolutional Autoencoder (CAE)** to learn noise dist
 
 ---
 
-## 📜 License
+## License
 This project is for academic and research purposes.  
 Feel free to fork and experiment, but cite appropriately if used in publications.
 
