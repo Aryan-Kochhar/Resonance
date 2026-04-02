@@ -4,14 +4,14 @@ Wireless Channel Denoising using Deep Convolutional Autoencoders
 
 ---
 
-## 📌 Overview
+## Overview
 **Resonance** is a proof‑of‑concept project that demonstrates the feasibility of using deep learning for denoising wireless channel matrices.  
 Accurate Channel State Information (CSI) is critical for 5G/IoT systems, but raw measurements are corrupted by noise, hardware imperfections, and multipath interference.  
 This project leverages a **Convolutional Autoencoder (CAE)** to learn noise distributions directly from data and reconstruct cleaner channel estimates.
 
 ---
 
-## 🎯 Problem Statement
+## Problem Statement
 - **Noisy channel matrices** degrade wireless system performance.  
 - Classical methods (Least Squares, Wiener, Kalman filters) assume Gaussian noise and fail at low SNR.  
 - Pilot signals consume bandwidth and are not adaptive.  
@@ -19,7 +19,7 @@ This project leverages a **Convolutional Autoencoder (CAE)** to learn noise dist
 
 ---
 
-## 📂 Dataset
+## Dataset
 - Source: **DeepMIMO** synthetic dataset (ray‑tracing based).  
 - Initial file: `channels_o1_60.npy` → 51 samples.  
 - Augmentation strategies (physics‑motivated):  
@@ -32,7 +32,7 @@ This project leverages a **Convolutional Autoencoder (CAE)** to learn noise dist
 
 ---
 
-## ⚙️ Preprocessing & Feature Extraction
+## Preprocessing & Feature Extraction
 - **Normalization**: Per‑sample unit norm (L₂ = 1).  
 - **Resizing**: Pad/truncate to `64 × 64`.  
 - **Feature decomposition**:  
@@ -42,7 +42,7 @@ This project leverages a **Convolutional Autoencoder (CAE)** to learn noise dist
 
 ---
 
-## 🧠 Model Architecture
+## Model Architecture
 **Convolutional Autoencoder (CAE)**
 
 - **Encoder**  
@@ -66,7 +66,7 @@ This project leverages a **Convolutional Autoencoder (CAE)** to learn noise dist
 
 ---
 
-## 📈 Results
+## Results
 - **Reconstruction MSE**: ~0.17  
 - **Training time**: < 5 minutes (50 epochs)  
 - **Observations**:  
