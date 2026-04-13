@@ -4,8 +4,8 @@ Resonance - Evaluation & Visualization Engine v4
 Produces:
   1. Heatmaps       — Noisy vs Clean vs AI Predicted (I and Q)
   2. Spectral Plot  — Channel impulse response comparison
-  3. NMSE vs SNR    — Corrupted Input vs Resonance AI
-  4. BER vs SNR     — Corrupted Input vs Resonance AI
+  3. NMSE vs SNR    — Corrupted Input vs Resonance (Ours)
+  4. BER vs SNR     — Corrupted Input vs Resonance (Ours)
   5. Training Curves— Loss + NMSE dB from CSV log
   6. Summary Poster — Single-page overview for presentation
 
@@ -175,7 +175,7 @@ def plot_heatmaps(sample_idx=0):
         fontsize=13, fontweight="bold", y=1.01
     )
     gs = gridspec.GridSpec(2, 4, hspace=0.4, wspace=0.3)
-    titles   = ["Noisy Input", "Ground Truth", "Resonance AI", "Residual Error"]
+    titles   = ["Noisy Input", "Ground Truth", "Resonance", "Residual Error"]
     cmaps    = ["magma", "viridis", "viridis", "RdBu_r"]
     ch_names = ["Real (I)", "Imaginary (Q)"]
 
@@ -215,7 +215,7 @@ def plot_spectral(sample_idx=0, antenna_idx=0):
                               ["Full Response", "Zoom: First 40 Taps (Dominant Paths)"]):
         ax.plot(d[sl], t_ir[sl], color=C_TRUTH, lw=2.0, label="Ground Truth")
         ax.plot(d[sl], n_ir[sl], color=C_NOISY, lw=1.2, label="Noisy Input",  alpha=0.7)
-        ax.plot(d[sl], p_ir[sl], color=C_AI,    lw=1.8, label="Resonance AI", ls="--")
+        ax.plot(d[sl], p_ir[sl], color=C_AI,    lw=1.8, label="Resonance (Ours)", ls="--")
         ax.set_xlabel("Delay Tap"); ax.set_ylabel("|h(τ)|")
         ax.set_title(title, fontsize=11)
         ax.legend(fontsize=10); ax.grid(True)
@@ -229,7 +229,7 @@ fig, ax = plt.subplots(figsize=(11, 6))
 ax.plot(SNR_RANGE_DB, nmse_noisy_arr, color=C_NOISY, lw=2,   marker="o", ms=5,
         label="Corrupted Input (No Processing)")
 ax.plot(SNR_RANGE_DB, nmse_ai_arr,    color=C_AI,    lw=2.5, marker="s", ms=5,
-        label="Resonance AI  (Ours)", ls="--")
+        label="Resonance (Ours)", ls="--")
 ax.set_xlabel("Input SNR (dB)", fontsize=13)
 ax.set_ylabel("NMSE (dB)",      fontsize=13)
 ax.set_title("Channel Estimation Quality: NMSE vs SNR\n"
@@ -251,7 +251,7 @@ fig, ax = plt.subplots(figsize=(11, 6))
 ax.semilogy(SNR_RANGE_DB, ber_noisy_arr, color=C_NOISY, lw=2,   marker="o", ms=5,
             label="Corrupted Input (No Processing)")
 ax.semilogy(SNR_RANGE_DB, ber_ai_arr,    color=C_AI,    lw=2.5, marker="s", ms=5,
-            label="Resonance AI  (Ours)", ls="--")
+            label="Resonance (Ours)", ls="--")
 ax.axhline(1e-3, color="#888888", lw=1.2, ls=":", alpha=0.7)
 ax.text(SNR_RANGE_DB[-1]+0.3, 1e-3, "10⁻³\n(5G NR target)", fontsize=9,
         va="center", color="#888888")
@@ -305,7 +305,7 @@ print("\n[6/6] Building summary poster...")
 
 fig = plt.figure(figsize=(24, 16))
 fig.suptitle(
-    "Resonance  —  AI-Powered Massive MIMO Channel Estimation\n"
+    "Resonance  —  Deep Learning-Based Massive MIMO Channel Estimation\n"
     "ConvNeXt U-Net + Attention Gates + CBAM  |  Physics-Informed Multi-Component Loss  |  O1_28 @ 28 GHz",
     fontsize=16, fontweight="bold", y=0.98
 )
@@ -314,7 +314,7 @@ gs = gridspec.GridSpec(3, 4, figure=fig,
                        top=0.93, bottom=0.06, left=0.06, right=0.97)
 
 # Row 0: heatmaps
-titles_h = ["Noisy Input", "Ground Truth", "Resonance AI", "Residual Error"]
+titles_h = ["Noisy Input", "Ground Truth", "Resonance", "Residual Error"]
 cmaps_h  = ["magma", "viridis", "viridis", "RdBu_r"]
 tg = X_test[0, :, :, 0];  ng = noisy_input[0, :, :, 0]
 pg = predictions[0, :, :, 0];  eg = tg - pg
@@ -334,7 +334,7 @@ ax_n = fig.add_subplot(gs[1, :2])
 ax_n.plot(SNR_RANGE_DB, nmse_noisy_arr, color=C_NOISY, lw=2,   marker="o", ms=4,
           label="Corrupted Input")
 ax_n.plot(SNR_RANGE_DB, nmse_ai_arr,    color=C_AI,    lw=2.5, marker="s", ms=4,
-          label="Resonance AI  (Ours)", ls="--")
+          label="Resonance (Ours)", ls="--")
 ax_n.set_xlabel("SNR (dB)", fontsize=11); ax_n.set_ylabel("NMSE (dB)", fontsize=11)
 ax_n.set_title("NMSE vs SNR", fontsize=12, fontweight="bold")
 ax_n.legend(fontsize=10); ax_n.grid(True); ax_n.invert_yaxis()
@@ -344,7 +344,7 @@ ax_b = fig.add_subplot(gs[1, 2:])
 ax_b.semilogy(SNR_RANGE_DB, ber_noisy_arr, color=C_NOISY, lw=2,   marker="o", ms=4,
               label="Corrupted Input")
 ax_b.semilogy(SNR_RANGE_DB, ber_ai_arr,    color=C_AI,    lw=2.5, marker="s", ms=4,
-              label="Resonance AI  (Ours)", ls="--")
+              label="Resonance (Ours)", ls="--")
 ax_b.axhline(1e-3, color="#888888", lw=1.2, ls=":", alpha=0.7)
 ax_b.text(28, 1.4e-3, "5G target", fontsize=8, color="#888888")
 ax_b.set_xlabel("SNR (dB)", fontsize=11); ax_b.set_ylabel("BER", fontsize=11)
@@ -359,7 +359,7 @@ p_ir = np.abs(np.fft.ifft(to_complex(predictions[0:1])[0, 0]))
 d40  = np.arange(40)
 ax_s.plot(d40, t_ir[:40], color=C_TRUTH, lw=2.0, label="Ground Truth")
 ax_s.plot(d40, n_ir[:40], color=C_NOISY, lw=1.2, label="Noisy Input",  alpha=0.7)
-ax_s.plot(d40, p_ir[:40], color=C_AI,    lw=1.8, label="Resonance AI", ls="--")
+ax_s.plot(d40, p_ir[:40], color=C_AI,    lw=1.8, label="Resonance", ls="--")
 ax_s.set_xlabel("Delay Tap", fontsize=11); ax_s.set_ylabel("|h(τ)|", fontsize=11)
 ax_s.set_title("Channel Impulse Response (First 40 Taps)", fontsize=12, fontweight="bold")
 ax_s.legend(fontsize=10); ax_s.grid(True)
@@ -373,7 +373,7 @@ ber_imp = (ber_noisy_arr[idx_10] - ber_ai_arr[idx_10]) / (ber_noisy_arr[idx_10] 
 ax_t = fig.add_subplot(gs[2, 2:])
 ax_t.axis("off")
 rows_data = [
-    ["Metric",           "Corrupted Input",  "Resonance AI",            "Gain"],
+    ["Metric",           "Corrupted Input",  "Resonance",            "Gain"],
     ["NMSE @ SNR=0 dB",  f"{nmse_noisy_arr[idx_0]:.1f} dB",
                           f"{nmse_ai_arr[idx_0]:.1f} dB",
                           f"+{nmse_noisy_arr[idx_0]-nmse_ai_arr[idx_0]:.1f} dB ↑"],
@@ -428,7 +428,7 @@ for idx in [idx_0, idx_10, idx_20]:
 print(f"{'─'*60}")
 print(f"  BER @ SNR=10 dB:")
 print(f"    Corrupted   : {ber_noisy_arr[idx_10]:.3e}")
-print(f"    Resonance AI: {ber_ai_arr[idx_10]:.3e}")
+print(f"    Resonance : {ber_ai_arr[idx_10]:.3e}")
 print(f"    Reduction   : {ber_imp:.1f}%")
 print(f"  Overall NMSE  : {overall_nmse:.2f} dB")
 print(f"{'═'*60}")
