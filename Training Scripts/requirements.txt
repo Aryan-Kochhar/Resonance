@@ -1,0 +1,17 @@
+# Resonance - Project Dependencies
+
+# Core Machine Learning & Neural Network
+tensorflow>=2.15.0
+
+# Telecommunications & Data Generation
+DeepMIMO>=2.0.0
+
+# Data Pipeline & Matrix Processing
+numpy>=1.24.0
+h5py>=3.8.0
+
+# Telecom Metrics Math (erfc / Q-function)
+scipy>=1.10.0
+
+# Evaluation & Visualization
+matplotlib>=3.7.0
