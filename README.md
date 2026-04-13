@@ -1,7 +1,7 @@
 # Resonance
 ### AI-Powered Massive MIMO Channel Estimation for 5G/6G
 
-A deep learning pipeline that replaces classical channel estimators in 5G Massive MIMO systems using a physics-informed ConvNeXt U-Net with attention mechanisms.
+A deep learning pipeline that replaces classical channel estimators in 5G Massive MIMO systems using a physics-informed ConvNeXt U-Net with attention mechanisms. Built on ray-tracing data from the DeepMIMO O1_28 outdoor scenario at 28 GHz.
 
 ---
 
@@ -15,17 +15,15 @@ A deep learning pipeline that replaces classical channel estimators in 5G Massiv
 
 **BER at SNR=10 dB:** 0.163 (corrupted) → 0.003 (AI) — **98.2% reduction**
 
+![Summary Poster](visualizations/summary_poster.png)
+
 ---
 
-## What This Is
+## Problem
 
-Classical 5G base stations use Least Squares (LS) estimation to recover the Channel State Information (CSI) matrix from pilot signals. This works reasonably at high SNR but degrades badly in low-SNR conditions (urban mmWave, cell edges, high mobility).
+5G base stations need accurate Channel State Information (CSI) to beamform correctly. In practice, the channel matrix is estimated from pilot signals and is always noise-corrupted — especially at cell edges, in high-mobility scenarios, and in mmWave bands where path loss is severe.
 
-Resonance trains a neural network to take a noise-corrupted channel observation and reconstruct the clean CSI matrix — learning the physical structure of the channel (antenna correlations, multipath delay patterns) from ray-tracing data.
-
-**Scenario:** O1_28 — outdoor street environment at 28 GHz  
-**Array:** 128-antenna Uniform Planar Array (16×8) × 256 OFDM subcarriers  
-**Input/Output:** `(128, 256, 2)` I/Q tensor — real and imaginary components of the complex channel matrix
+Classical estimators (Least Squares, Wiener, Kalman) assume Gaussian noise and degrade badly at low SNR. They also don't scale well to 128+ antenna arrays. This project trains a neural network to reconstruct the clean CSI matrix from a corrupted observation — learning channel structure directly from ray-tracing data rather than assuming a noise model.
 
 ---
 
@@ -56,11 +54,10 @@ Input (128, 256, 2)
     Output Conv (128, 256, 2)
 ```
 
-**Key components:**
-- **ConvNeXt blocks** — 7×7 depthwise convolutions capture long-range antenna correlations (analogous to Vision Transformer attention span)
-- **Attention Gates** — decoder selectively focuses on encoder features; suppresses noise-dominated regions of the channel
+- **ConvNeXt blocks** — 7×7 depthwise convolutions capture long-range antenna correlations without the compute cost of self-attention
+- **Attention Gates** — decoder selectively focuses on encoder features, suppressing noise-dominated regions of the channel
 - **CBAM Channel Attention** — bottleneck learns which feature maps correspond to dominant propagation modes
-- **Linear output activation** — I/Q values are unbounded real numbers, not sigmoid-bounded
+- **Linear output activation** — I/Q values are unbounded real numbers
 
 ---
 
@@ -75,9 +72,21 @@ L = NMSE                          # reconstruction accuracy
   + λ_mag  × magnitude_loss       # channel amplitude accuracy
 ```
 
-The physics penalty enforces the spatial correlation structure of Uniform Planar Arrays — adjacent antennas must have smoothly varying channels, which is a hard physical constraint derived from the array steering vector.
+The physics penalty enforces spatial correlation of Uniform Planar Arrays — adjacent antennas must have smoothly varying channels, derived from the array steering vector geometry. The spectral loss ensures accuracy in the delay domain, not just per-subcarrier.
 
 Default weights: `λ_phys=0.10`, `λ_spec=0.10`, `λ_mag=0.05`
+
+---
+
+## Dataset
+
+**DeepMIMO O1_28** — outdoor street environment at 28 GHz (mmWave 5G), generated with Remcom Wireless InSite ray-tracing.
+
+- 128-antenna Uniform Planar Array (16×8) × 256 OFDM subcarriers
+- **25,000 channel samples** (5 user rows × 5,000 users)
+- **Train / Val / Test:** 12,453 / 1,099 / 1,099 samples
+- I/Q Cartesian decomposition — avoids 2π phase discontinuity errors from polar representation
+- Raw .mat files not included (13 GB) — download from [deepmimo.net](https://deepmimo.net)
 
 ---
 
@@ -85,22 +94,17 @@ Default weights: `λ_phys=0.10`, `λ_spec=0.10`, `λ_mag=0.05`
 
 ```
 Resonance/
-├── dgen_o1_28.py       # Step 1: Generate channels from raw .mat ray-tracing files
+├── dgen_o1_28.py       # Step 1: Build channel matrices from raw .mat files
 ├── preprocess_2.py     # Step 2: Clean, normalize, split into train/val/test
-├── model.py            # Model architecture + loss function + metrics
+├── model.py            # Architecture + loss function + metrics
 ├── train.py            # Training loop with cosine annealing
-├── eval.py             # Evaluation: heatmaps, NMSE/BER curves, summary poster
+├── eval.py             # Full evaluation + all visualizations
 │
 ├── logs/
-│   ├── training_log.csv
-│   ├── train/          # TensorBoard train logs
-│   └── validation/     # TensorBoard val logs
-│
-├── weights/
-│   └── resonance_best.weights.h5
-│
+│   └── training_log.csv
+├── weights/            # not in repo — generated after training
 └── visualizations/
-    ├── summary_poster.png       ← main result figure
+    ├── summary_poster.png
     ├── heatmaps_sample0.png
     ├── heatmaps_sample1.png
     ├── nmse_vs_snr.png
@@ -114,52 +118,30 @@ Resonance/
 ## Setup
 
 ```bash
-pip install tensorflow numpy scipy matplotlib scikit-learn h5py
+pip install tensorflow numpy scipy matplotlib scikit-learn
 ```
 
-Tested on Python 3.10, TensorFlow 2.11, Windows with CUDA GPU.
+Tested on Python 3.10, TensorFlow 2.10, Windows with CUDA GPU. Trained on RTX 3070 Ti Laptop (6GB VRAM).
 
 ---
 
 ## Usage
 
-### Step 1 — Generate channel data from raw DeepMIMO .mat files
 ```bash
-# Edit SCENARIO_FOLDER and OUTPUT_NPY paths in dgen_o1_28.py first
+# 1. Generate channel matrices from raw DeepMIMO .mat files
 python dgen_o1_28.py
-```
-Reads `power`, `delay`, `phase`, `aod_az`, `aod_el` .mat files from the O1_28 DeepMIMO v4 scenario and constructs complex MIMO channel matrices via UPA steering vectors + OFDM phase shifts.
 
-### Step 2 — Preprocess
-```bash
-# Edit INPUT_NPY and OUTPUT_DIR paths in preprocess_2.py first
+# 2. Preprocess — clean, normalize, split
 python preprocess_2.py
-```
-Removes NaN/zero-energy samples, applies per-sample L2 normalization, splits into train/val/test.
 
-### Step 3 — Train
-```bash
-# Edit SPLITS_DIR path in train.py first
+# 3. Train
 python train.py
-```
-Trains for up to 60 epochs with cosine annealing LR schedule and early stopping. Best weights saved to `weights/resonance_best.weights.h5`.
 
-### Step 4 — Evaluate
-```bash
-# Edit SPLITS_DIR and WEIGHTS_PATH in eval.py first
+# 4. Evaluate and generate all visualizations
 python eval.py
 ```
-Runs full evaluation across SNR range −10 to +30 dB, generates all visualizations, prints performance table.
 
----
-
-## Data
-
-Uses the **DeepMIMO O1_28** ray-tracing scenario — an outdoor street environment at 28 GHz (mmWave 5G band) generated with Remcom Wireless InSite.
-
-- **25,000 channel samples** (5 user rows × 5,000 users per row)
-- **Train / Val / Test:** 12,453 / 1,099 / 1,099 samples
-- Raw .mat files not included in this repo (13 GB). Download from [deepmimo.net](https://deepmimo.net)
+Edit the `CONFIG` block at the top of each file to set your data paths before running.
 
 ---
 
@@ -168,20 +150,24 @@ Uses the **DeepMIMO O1_28** ray-tracing scenario — an outdoor street environme
 | Parameter | Value |
 |-----------|-------|
 | Batch size | 4 |
-| Epochs | 60 (early stopping) |
 | Optimizer | Adam |
-| LR schedule | Cosine annealing with 200-step warmup |
-| LR range | 1e-3 → 1e-6 |
-| Weight decay | 1e-4 |
+| LR schedule | Cosine annealing 1e-3 → 1e-6 with 200-step warmup |
 | Gradient clipping | 1.0 (global norm) |
-| Mixed precision | Disabled |
 | Augmentation | On-the-fly AWGN, random std 0.02–0.05 |
+| Early stopping | Patience 12 on val NMSE |
+| Best val NMSE | −18.75 dB |
 
 ---
 
-## References
+## Roadmap
 
-- A. Alkhateeb, "DeepMIMO: A Generic Deep Learning Dataset for Millimeter Wave and Massive MIMO Applications," ITA 2019
-- Z. Liu et al., "A ConvNet for the 2020s" (ConvNeXt), CVPR 2022
-- O. Oktay et al., "Attention U-Net," MIDL 2018
-- S. Woo et al., "CBAM: Convolutional Block Attention Module," ECCV 2018
+- Zero-shot generalization testing (train on 28 GHz outdoor, test on 2.4 GHz indoor)
+- Benchmark against LMMSE estimator
+- Explore State Space Models (Mamba) as backbone alternative
+- Inference latency profiling for real-time deployment
+
+---
+
+## License
+
+Academic and research use only. Cite appropriately if used in publications.
