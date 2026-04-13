@@ -1,9 +1,9 @@
 # Resonance
-### AI-Powered Massive MIMO Channel Estimation for 5G/6G
+### Deep Learning-Based CSI Recovery for 5G/6G Massive MIMO
 
-A deep learning pipeline that replaces classical channel estimators in 5G Massive MIMO systems using a physics-informed ConvNeXt U-Net with attention mechanisms. Built on ray-tracing data from the DeepMIMO O1_28 outdoor scenario at 28 GHz.
-
----
+A deep learning pipeline that learns to reconstruct clean Channel State Information (CSI) 
+matrices from noise-corrupted observations — replacing hand-crafted signal processing 
+estimators with a neural network trained directly on ray-tracing channel data.
 
 ## Results
 
@@ -23,7 +23,11 @@ A deep learning pipeline that replaces classical channel estimators in 5G Massiv
 
 5G base stations need accurate Channel State Information (CSI) to beamform correctly. In practice, the channel matrix is estimated from pilot signals and is always noise-corrupted — especially at cell edges, in high-mobility scenarios, and in mmWave bands where path loss is severe.
 
-Classical estimators (Least Squares, Wiener, Kalman) assume Gaussian noise and degrade badly at low SNR. They also don't scale well to 128+ antenna arrays. This project trains a neural network to reconstruct the clean CSI matrix from a corrupted observation — learning channel structure directly from ray-tracing data rather than assuming a noise model.
+This project trains a ConvNeXt U-Net to map corrupted channel observations → clean CSI 
+matrices. Instead of assuming a noise model like classical methods do, the network learns 
+the physical structure of the channel — antenna spatial correlations, multipath delay 
+patterns, and frequency coherence — purely from data. At inference time it runs a single 
+forward pass: input is the noisy channel matrix, output is the denoised estimate.
 
 ---
 
